@@ -15,7 +15,7 @@ const Hero = () => {
       {/* Background image with overlay */}
       <div className="absolute inset-0 bg-cover bg-center" 
           style={{ 
-            backgroundImage: "url('/placeholder.svg')", 
+            backgroundImage: "url('https://i.ibb.co/Dq0XpXF/argi.jpg')", 
             backgroundPosition: "center 30%",
           }}>
         <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-black/40 to-background"></div>

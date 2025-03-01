@@ -61,7 +61,6 @@ const Transportation = () => {
       viewRequests: "View Requests",
       createRequest: "Create Request",
       vehicleCapacity: "Capacity",
-      vehicleType: "Vehicle Type",
       costPerKm: "Cost per km",
       contactNow: "Contact Now",
       viewDetails: "View Details",
@@ -105,7 +104,6 @@ const Transportation = () => {
       viewRequests: "अनुरोध देखें",
       createRequest: "अनुरोध बनाएं",
       vehicleCapacity: "क्षमता",
-      vehicleType: "वाहन प्रकार",
       costPerKm: "प्रति किमी लागत",
       contactNow: "अभी संपर्क करें",
       viewDetails: "विवरण देखें",
@@ -139,7 +137,7 @@ const Transportation = () => {
       capacity: "1.5 ton",
       vehicleType: language === "english" ? "Refrigerated" : "रेफ्रिजरेटेड",
       available: true,
-      image: "/placeholder.svg",
+      image: "https://i.ibb.co/7NkcYfgp/truck.jpg",
       rating: 4.7
     },
     {
@@ -152,7 +150,7 @@ const Transportation = () => {
       capacity: "2.5 ton",
       vehicleType: language === "english" ? "General" : "सामान्य",
       available: true,
-      image: "/placeholder.svg",
+      image: "https://i.ibb.co/jZsQBXZq/Tata-407.jpg",
       rating: 4.2
     },
     {
@@ -165,7 +163,7 @@ const Transportation = () => {
       capacity: "1 ton",
       vehicleType: language === "english" ? "General" : "सामान्य",
       available: false,
-      image: "/placeholder.svg",
+      image: "https://i.ibb.co/XZY2tmCB/Mahindra-Pickup.jpg",
       rating: 4.5
     }
   ];
@@ -182,7 +180,7 @@ const Transportation = () => {
       quantity: "500 kg",
       price: "₹1500 total",
       seatsAvailable: 2,
-      image: "/placeholder.svg"
+      image: "https://i.ibb.co/XZY2tmCB/Mahindra-Pickup.jpg"
     },
     {
       id: 2,
@@ -194,7 +192,7 @@ const Transportation = () => {
       quantity: "800 kg",
       price: "₹2000 total",
       seatsAvailable: 3,
-      image: "/placeholder.svg"
+      image: "https://i.ibb.co/1NPrT9G/Potato-Delivery-to-Cold-Storage.jpg"
     }
   ];
 

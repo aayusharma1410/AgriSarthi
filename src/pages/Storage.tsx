@@ -3,6 +3,15 @@ import { Search, MapPin, Thermometer, Droplets, Clock, ArrowRight, Leaf, Zap, Al
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ChatBot from "../components/ChatBot";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client";
+import { toast } from "sonner";
+import { Database } from "../integrations/supabase/types";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+
+type StorageFacility = Database['public']['Tables']['storage_facilities']['Row'];
 
 const Storage = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -16,10 +25,35 @@ const Storage = () => {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [showSharingOptions, setShowSharingOptions] = useState(false);
+  const [storageFacilities, setStorageFacilities] = useState<StorageFacility[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const { user } = useAuth();
 
   useEffect(() => {
     setIsLoaded(true);
+    fetchStorageFacilities();
   }, []);
+
+  const fetchStorageFacilities = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('storage_facilities')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setStorageFacilities(data);
+      }
+    } catch (error: any) {
+      toast.error(`Error fetching storage facilities: ${error.message}`);
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddPesticide = (pesticide: string) => {
     if (pesticide && !pesticidesUsed.includes(pesticide)) {
@@ -49,59 +83,40 @@ const Storage = () => {
     setShowAnalysis(true);
   };
 
-  const storageOptions = [
-    {
-      id: 1,
-      name: "Krishak Cold Storage",
-      distance: "2.5 km",
-      temperature: "2-4°C",
-      humidity: "85-90%",
-      capacity: "75% available",
-      priceRange: "₹5-7 per kg/month",
-      image: "/placeholder.svg",
-      rating: 4.7,
-      cropTypes: ["fruits", "vegetables"],
-      sharingAvailable: true,
-    },
-    {
-      id: 2,
-      name: "AgriCool Warehouse",
-      distance: "3.8 km",
-      temperature: "0-2°C",
-      humidity: "90-95%",
-      capacity: "40% available",
-      priceRange: "₹6-8 per kg/month",
-      image: "/placeholder.svg",
-      rating: 4.5,
-      cropTypes: ["fruits", "dairy"],
-      sharingAvailable: true,
-    },
-    {
-      id: 3,
-      name: "KisanSeva Storage Facility",
-      distance: "5.1 km",
-      temperature: "3-5°C",
-      humidity: "80-85%",
-      capacity: "90% available",
-      priceRange: "₹4-6 per kg/month",
-      image: "/placeholder.svg",
-      rating: 4.2,
-      cropTypes: ["fruits", "vegetables", "flowers"],
-      sharingAvailable: false,
-    },
-    {
-      id: 4,
-      name: "Bharat Grain Storage",
-      distance: "4.2 km",
-      temperature: "18-22°C",
-      humidity: "50-60%",
-      capacity: "65% available",
-      priceRange: "₹3-5 per kg/month",
-      image: "/placeholder.svg",
-      rating: 4.3,
-      cropTypes: ["grains", "cereals", "pulses"],
-      sharingAvailable: true,
-    }
+  // Map storage facilities to UI display format
+  const storageOptionsFromDB = storageFacilities.map((facility, index) => {
+    // Generate synthetic data for each facility
+    const randomDistance = (Math.random() * 10).toFixed(1);
+    const randomTemperature = facility.name.includes('Cold') ? "2-4°C" : "15-25°C";
+    const randomHumidity = facility.name.includes('Cold') ? "85-90%" : "50-60%";
+    const randomCapacity = Math.floor(Math.random() * 100) + "%";
+    const randomPrice = `₹${Math.floor(Math.random() * 5) + 3}-${Math.floor(Math.random() * 5) + 5} per kg/month`;
+    const randomRating = (Math.random() * 1 + 4).toFixed(1);
+    const cropTypes = facility.name.includes('Cold') 
+      ? ["fruits", "vegetables"] 
+      : ["grains", "cereals", "pulses"];
+    
+    return {
+      id: facility.id,
+      name: facility.name,
+      distance: `${randomDistance} km`,
+      temperature: randomTemperature,
+      humidity: randomHumidity,
+      capacity: `${randomCapacity} available`,
+      priceRange: randomPrice,
+      image: "https://i.ibb.co/pVgJjh2/kris.jpg",
+      rating: parseFloat(randomRating),
+      cropTypes: cropTypes,
+      sharingAvailable: index % 2 === 0, // Alternate facilities have sharing
+      location: facility.location,
+      contactInfo: facility.contact_info || 'Contact information not available',
+      description: facility.description || 'No description available'
+    };
+  });
+
+  const pesticideOptions = [
+    "Cypermethrin", "Chlorpyrifos", "Imidacloprid", "Glyphosate", 
+    "Mancozeb", "Carbendazim", "Profenofos", "Organic Neem Extract"
   ];
 
   const processingTips = [
@@ -129,11 +144,6 @@ const Storage = () => {
       description: "Maintain optimal moisture levels for different crop types to prevent spoilage during storage.",
       icon: <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">4</div>
     }
-  ];
-
-  const pesticideOptions = [
-    "Cypermethrin", "Chlorpyrifos", "Imidacloprid", "Glyphosate", 
-    "Mancozeb", "Carbendazim", "Profenofos", "Organic Neem Extract"
   ];
 
   return (
@@ -376,68 +386,74 @@ const Storage = () => {
               {/* Storage Options */}
               <div>
                 <h3 className="text-xl font-medium mb-4">Available Storage Options Near You</h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {storageOptions.map((option) => (
-                    <div key={option.id} className="bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all hover-lift">
-                      <div className="h-48 overflow-hidden">
-                        <img 
-                          src={option.image} 
-                          alt={option.name} 
-                          className="w-full h-full object-cover transition-transform hover:scale-105"
-                        />
-                      </div>
-                      <div className="p-5">
-                        <div className="flex justify-between items-start mb-3">
-                          <h4 className="text-lg font-medium">{option.name}</h4>
-                          <div className="bg-secondary/20 text-secondary-foreground px-2 py-1 rounded-md text-sm font-medium">
-                            {option.rating} ★
-                          </div>
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {storageOptionsFromDB.map((option) => (
+                      <div key={option.id} className="bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all hover-lift">
+                        <div className="h-48 overflow-hidden">
+                          <img 
+                            src={option.image} 
+                            alt={option.name} 
+                            className="w-full h-full object-cover transition-transform hover:scale-105"
+                          />
                         </div>
-                        
-                        <div className="flex items-center text-muted-foreground mb-3">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span className="text-sm">{option.distance} away</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          <div className="flex items-center">
-                            <Thermometer className="h-4 w-4 text-primary mr-2" />
-                            <span className="text-sm">{option.temperature}</span>
+                        <div className="p-5">
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="text-lg font-medium">{option.name}</h4>
+                            <div className="bg-secondary/20 text-secondary-foreground px-2 py-1 rounded-md text-sm font-medium">
+                              {option.rating} ★
+                            </div>
                           </div>
-                          <div className="flex items-center">
-                            <Droplets className="h-4 w-4 text-primary mr-2" />
-                            <span className="text-sm">{option.humidity}</span>
+                          
+                          <div className="flex items-center text-muted-foreground mb-3">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            <span className="text-sm">{option.location} ({option.distance} away)</span>
                           </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 text-primary mr-2" />
-                            <span className="text-sm">{option.capacity}</span>
+                          
+                          <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="flex items-center">
+                              <Thermometer className="h-4 w-4 text-primary mr-2" />
+                              <span className="text-sm">{option.temperature}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Droplets className="h-4 w-4 text-primary mr-2" />
+                              <span className="text-sm">{option.humidity}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 text-primary mr-2" />
+                              <span className="text-sm">{option.capacity}</span>
+                            </div>
+                            <div className="text-sm">
+                              {option.priceRange}
+                            </div>
                           </div>
-                          <div className="text-sm">
-                            {option.priceRange}
-                          </div>
-                        </div>
-                        
-                        {option.sharingAvailable && (
-                          <div className="mb-3 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2 rounded-lg flex items-center">
-                            <Users className="h-4 w-4 text-indigo-500 mr-2" />
-                            <span className="text-sm text-indigo-700 dark:text-indigo-300">Sharing Available</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <button className="flex-1 py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors">
-                            View Details
-                          </button>
+                          
                           {option.sharingAvailable && (
-                            <button className="p-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">
-                              <Share2 className="h-5 w-5" />
-                            </button>
+                            <div className="mb-3 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2 rounded-lg flex items-center">
+                              <Users className="h-4 w-4 text-indigo-500 mr-2" />
+                              <span className="text-sm text-indigo-700 dark:text-indigo-300">Sharing Available</span>
+                            </div>
                           )}
+                          
+                          <div className="flex gap-2">
+                            <button className="flex-1 py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors">
+                              View Details
+                            </button>
+                            {option.sharingAvailable && (
+                              <button className="p-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">
+                                <Share2 className="h-5 w-5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -688,258 +704,290 @@ const Storage = () => {
                       </button>
                     </div>
                     
-                    {analysisResult?.storageWarnings && (
-                      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 rounded-lg flex items-start">
-                        <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                        <p>{analysisResult.storageWarnings}</p>
+                    {analysisResult && (
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Recommended Storage</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-2xl font-semibold text-primary mb-2">{analysisResult.recommendedStorageType}</p>
+                            <p className="text-muted-foreground">Based on crop type, harvest date, and quantity</p>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Temperature Range</CardTitle>
+                          </CardHeader>
+                          <CardContent className="flex items-center">
+                            <Thermometer className="h-8 w-8 text-orange-500 mr-3" />
+                            <div>
+                              <p className="text-2xl font-semibold">{analysisResult.temperatureRange}</p>
+                              <p className="text-muted-foreground">Maintain consistently</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Humidity Range</CardTitle>
+                          </CardHeader>
+                          <CardContent className="flex items-center">
+                            <Droplets className="h-8 w-8 text-blue-500 mr-3" />
+                            <div>
+                              <p className="text-2xl font-semibold">{analysisResult.humidityRange}</p>
+                              <p className="text-muted-foreground">For optimal preservation</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Estimated Shelf Life</CardTitle>
+                          </CardHeader>
+                          <CardContent className="flex items-center">
+                            <Clock className="h-8 w-8 text-green-500 mr-3" />
+                            <div>
+                              <p className="text-2xl font-semibold">{analysisResult.estimatedShelfLife}</p>
+                              <p className="text-muted-foreground">Under optimal conditions</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Transportation Method</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-xl font-semibold">{analysisResult.transportationMethod}</p>
+                            <p className="text-muted-foreground">Based on quantity and type</p>
+                          </CardContent>
+                        </Card>
+                        
+                        {analysisResult.storageWarnings && (
+                          <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg flex items-center text-amber-700 dark:text-amber-400">
+                                <AlertCircle className="h-5 w-5 mr-2" />
+                                Special Considerations
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-amber-700 dark:text-amber-400">{analysisResult.storageWarnings}</p>
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     )}
                     
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-card rounded-lg border border-border p-5">
-                        <h4 className="text-lg font-medium mb-4">Storage Recommendations</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Recommended Storage Type:</span>
-                            <span className="font-medium">{analysisResult?.recommendedStorageType}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Temperature Range:</span>
-                            <span className="font-medium">{analysisResult?.temperatureRange}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Humidity Range:</span>
-                            <span className="font-medium">{analysisResult?.humidityRange}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Estimated Shelf Life:</span>
-                            <span className="font-medium">{analysisResult?.estimatedShelfLife}</span>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="mt-8">
+                      <Button 
+                        onClick={() => setShowSharingOptions(!showSharingOptions)} 
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share Analysis
+                      </Button>
                       
-                      <div className="bg-card rounded-lg border border-border p-5">
-                        <h4 className="text-lg font-medium mb-4">Transportation Recommendations</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Recommended Vehicle:</span>
-                            <span className="font-medium">{analysisResult?.transportationMethod}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Additional Requirements:</span>
-                            <span className="font-medium">
-                              {cropType === "fruits" || cropType === "vegetables" 
-                                ? "Temperature-controlled environment" 
-                                : "Standard protection from elements"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Loading Precautions:</span>
-                            <span className="font-medium">
-                              {cropType === "fruits" 
-                                ? "Handle with care, avoid stacking" 
-                                : cropType === "vegetables" 
-                                ? "Proper ventilation required"
-                                : "Standard loading procedures"}
-                            </span>
+                      {showSharingOptions && (
+                        <div className="mt-4 p-4 bg-background rounded-lg border border-border">
+                          <p className="mb-3 text-sm font-medium">Share this analysis with:</p>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button variant="outline" size="sm">Storage Provider</Button>
+                            <Button variant="outline" size="sm">Transportation Partner</Button>
+                            <Button variant="outline" size="sm">Co-operative</Button>
+                            <Button variant="outline" size="sm">Export Agency</Button>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    
-                    <div className="mt-6">
-                      <h4 className="text-lg font-medium mb-4">Nearby Storage Facilities Matching Your Requirements</h4>
-                      <div className="grid md:grid-cols-3 gap-4">
-                        {storageOptions
-                          .filter(option => option.cropTypes && option.cropTypes.includes(cropType))
-                          .slice(0, 3)
-                          .map(option => (
-                            <div key={option.id} className="bg-card rounded-lg border border-border p-4 hover-lift">
-                              <h5 className="font-medium mb-1">{option.name}</h5>
-                              <div className="text-sm text-muted-foreground mb-2">{option.distance} away</div>
-                              <div className="flex justify-between text-sm">
-                                <span>{option.temperature}</span>
-                                <span>{option.capacity}</span>
-                              </div>
-                              {option.sharingAvailable && (
-                                <div className="mt-2 mb-2 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded text-xs flex items-center">
-                                  <Users className="h-3 w-3 text-indigo-500 mr-1" />
-                                  <span className="text-indigo-700 dark:text-indigo-300">Sharing Available</span>
-                                </div>
-                              )}
-                              <button className="w-full mt-2 py-1.5 text-sm bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors">
-                                Select
-                              </button>
+                  </div>
+                  
+                  <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+                    <h3 className="text-xl font-medium mb-6">Recommended Storage Facilities</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {storageOptionsFromDB.slice(0, 3).map((option) => (
+                        <div key={option.id} className="bg-background rounded-lg border border-border overflow-hidden hover:shadow-md transition-all">
+                          <div className="p-4">
+                            <h4 className="font-medium">{option.name}</h4>
+                            <div className="text-sm text-muted-foreground mb-2">{option.location} ({option.distance})</div>
+                            <div className="flex items-center text-sm mb-1">
+                              <Thermometer className="h-3 w-3 text-primary mr-1" />
+                              <span>{option.temperature}</span>
                             </div>
-                          ))}
-                      </div>
+                            <div className="flex items-center text-sm">
+                              <Clock className="h-3 w-3 text-primary mr-1" />
+                              <span>{option.capacity}</span>
+                            </div>
+                            <div className="mt-2">
+                              <Button size="sm" variant="outline" className="w-full">Contact</Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               )}
             </div>
           )}
-
+          
           {/* Storage Sharing Tab */}
           {activeTab === "sharing" && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl md:text-3xl font-medium mb-6">Storage Sharing for Small Farmers</h2>
+              <h2 className="text-2xl md:text-3xl font-medium mb-6">Community Storage Sharing</h2>
               <p className="text-muted-foreground mb-8">
-                Share storage facilities with other farmers to reduce costs and minimize waste. 
-                Our platform connects you with other farmers in your area who have similar storage needs.
+                Find other farmers to share storage costs or offer your unused storage space to others.
+                Our platform helps you connect with nearby farmers for cooperative storage solutions.
               </p>
-
-              <div className="grid md:grid-cols-2 gap-8 mb-12">
-                <div className="bg-card rounded-xl border border-border p-6 shadow-sm card-gradient">
-                  <h3 className="text-xl font-medium mb-4">Benefits of Storage Sharing</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-1 rounded-full mr-3 mt-1">
-                        <Zap className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <span className="font-medium">Cost Reduction</span>
-                        <p className="text-muted-foreground text-sm mt-1">Split the costs with other farmers and save up to 60% on storage expenses.</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-1 rounded-full mr-3 mt-1">
-                        <Zap className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <span className="font-medium">Access to Premium Facilities</span>
-                        <p className="text-muted-foreground text-sm mt-1">Get access to high-quality storage facilities that might be otherwise unaffordable.</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-1 rounded-full mr-3 mt-1">
-                        <Zap className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <span className="font-medium">Community Building</span>
-                        <p className="text-muted-foreground text-sm mt-1">Connect with other farmers in your area and build a supportive network.</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-1 rounded-full mr-3 mt-1">
-                        <Zap className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <span className="font-medium">Reduced Wastage</span>
-                        <p className="text-muted-foreground text-sm mt-1">Optimize storage space and reduce wastage through efficient utilization.</p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-card rounded-xl border border-border p-6 shadow-sm card-gradient">
-                  <h3 className="text-xl font-medium mb-4">How Storage Sharing Works</h3>
+              
+              <div className="grid md:grid-cols-2 gap-8 mb-10">
+                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm card-gradient">
+                  <h3 className="text-xl font-medium mb-4">Looking for Storage Space</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Find farmers offering unused storage space at a lower cost than commercial facilities.
+                  </p>
+                  
                   <div className="space-y-4">
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        1
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Crop Type</label>
+                      <select className="w-full py-2 px-3 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                        <option value="">Select crop type</option>
+                        <option value="grains">Grains</option>
+                        <option value="cereals">Cereals</option>
+                        <option value="pulses">Pulses</option>
+                        <option value="vegetables">Vegetables</option>
+                        <option value="fruits">Fruits</option>
+                      </select>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Quantity (kg)</label>
+                        <Input type="number" placeholder="Enter quantity" />
                       </div>
-                      <p>Enter your crop details and storage requirements</p>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        2
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Duration</label>
+                        <select className="w-full py-2 px-3 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                          <option value="1-week">1 week</option>
+                          <option value="2-weeks">2 weeks</option>
+                          <option value="1-month">1 month</option>
+                          <option value="3-months">3 months</option>
+                        </select>
                       </div>
-                      <p>Our system matches you with compatible farmers and available facilities</p>
                     </div>
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        3
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Location</label>
+                      <div className="relative">
+                        <Input 
+                          type="text" 
+                          placeholder="Enter your location" 
+                          className="pl-10" 
+                        />
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p>Connect with matched farmers and discuss sharing arrangements</p>
                     </div>
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        4
+                    
+                    <Button className="w-full">Find Shared Storage</Button>
+                  </div>
+                </div>
+                
+                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm card-gradient">
+                  <h3 className="text-xl font-medium mb-4">Offer Your Storage Space</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Have unused storage capacity? Offer it to other farmers and earn additional income.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Storage Type</label>
+                      <select className="w-full py-2 px-3 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                        <option value="">Select storage type</option>
+                        <option value="cold-storage">Cold Storage</option>
+                        <option value="warehouse">Warehouse</option>
+                        <option value="silo">Grain Silo</option>
+                        <option value="barn">Traditional Barn</option>
+                      </select>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Available Capacity (kg)</label>
+                        <Input type="number" placeholder="Enter capacity" />
                       </div>
-                      <p>Book the facility together and split the costs</p>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Rate (₹/kg/month)</label>
+                        <Input type="number" placeholder="Enter rate" />
+                      </div>
                     </div>
-                    <div className="mt-4">
-                      <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
-                        Find Storage Partners
-                      </button>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Availability Period</label>
+                      <select className="w-full py-2 px-3 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                        <option value="1-month">1 month</option>
+                        <option value="3-months">3 months</option>
+                        <option value="6-months">6 months</option>
+                        <option value="custom">Custom Period</option>
+                      </select>
                     </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Description</label>
+                      <textarea
+                        className="w-full py-2 px-3 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all min-h-[80px]"
+                        placeholder="Describe your storage space, features, and any restrictions"
+                      ></textarea>
+                    </div>
+                    
+                    <Button className="w-full">List Your Storage</Button>
                   </div>
                 </div>
               </div>
-
-              <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                <h3 className="text-xl font-medium mb-6">Available Storage Sharing Opportunities</h3>
+              
+              <div className="bg-primary/5 rounded-xl p-6 md:p-8 success-gradient">
+                <h3 className="text-xl font-medium mb-4">Active Storage Sharing Listings</h3>
                 
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4">Location</th>
-                        <th className="text-left py-3 px-4">Facility Type</th>
-                        <th className="text-left py-3 px-4">Total Capacity</th>
-                        <th className="text-left py-3 px-4">Available Space</th>
-                        <th className="text-left py-3 px-4">Cost per Farmer</th>
-                        <th className="text-left py-3 px-4">Farmers Joined</th>
-                        <th className="text-left py-3 px-4">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b border-border hover:bg-muted/20">
-                        <td className="py-3 px-4">Sonipat, Haryana</td>
-                        <td className="py-3 px-4">Cold Storage</td>
-                        <td className="py-3 px-4">5000 kg</td>
-                        <td className="py-3 px-4">2000 kg</td>
-                        <td className="py-3 px-4">₹3.5/kg/month</td>
-                        <td className="py-3 px-4">3/5</td>
-                        <td className="py-3 px-4">
-                          <button className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-lg">
-                            Join
-                          </button>
-                        </td>
-                      </tr>
-                      <tr className="border-b border-border hover:bg-muted/20">
-                        <td className="py-3 px-4">Nashik, Maharashtra</td>
-                        <td className="py-3 px-4">Warehouse</td>
-                        <td className="py-3 px-4">8000 kg</td>
-                        <td className="py-3 px-4">4000 kg</td>
-                        <td className="py-3 px-4">₹2.8/kg/month</td>
-                        <td className="py-3 px-4">2/6</td>
-                        <td className="py-3 px-4">
-                          <button className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-lg">
-                            Join
-                          </button>
-                        </td>
-                      </tr>
-                      <tr className="border-b border-border hover:bg-muted/20">
-                        <td className="py-3 px-4">Bhatinda, Punjab</td>
-                        <td className="py-3 px-4">Grain Silo</td>
-                        <td className="py-3 px-4">10000 kg</td>
-                        <td className="py-3 px-4">3000 kg</td>
-                        <td className="py-3 px-4">₹2.2/kg/month</td>
-                        <td className="py-3 px-4">4/8</td>
-                        <td className="py-3 px-4">
-                          <button className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-lg">
-                            Join
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mt-6 flex justify-center">
-                  <button className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                    Create New Sharing Group
-                  </button>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((item) => (
+                    <Card key={item}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Warehouse Space in Nashik</CardTitle>
+                        <CardDescription>Posted by Farmer Cooperative</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Capacity:</span>
+                            <span className="font-medium">5000 kg</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Rate:</span>
+                            <span className="font-medium">₹2.5/kg/month</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Duration:</span>
+                            <span className="font-medium">3 months</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Storage Type:</span>
+                            <span className="font-medium">Dry Warehouse</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="outline" className="w-full">Contact Lister</Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
                 </div>
               </div>
             </div>
           )}
-
         </div>
       </section>
-      
+
       <Footer />
       <ChatBot />
     </div>
