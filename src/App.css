@@ -1,0 +1,152 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* AgriSarthi Custom Styles */
+.brand-name {
+  margin-right: 1.5rem;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, rgba(147,250,165,0.1) 0%, rgba(123,232,131,0.2) 100%);
+}
+
+.card-gradient {
+  background: linear-gradient(180deg, rgba(249,255,182,0.1) 0%, rgba(226,255,172,0.2) 100%);
+}
+
+.success-gradient {
+  background: linear-gradient(90deg, hsla(134, 36%, 95%, 1) 0%, hsla(134, 36%, 90%, 1) 100%);
+}
+
+.nav-menu {
+  gap: 1rem;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #3a9e5f, #65c89b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #7CB342 0%, #4B830D 100%);
+}
+
+.form-gradient {
+  background: linear-gradient(135deg, rgba(147,250,165,0.05) 0%, rgba(123,232,131,0.1) 100%);
+}
+
+.multi-color-border {
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(to right, #3a9e5f, #65c89b) 1;
+}
+
+.shadow-subtle {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Language Transition Effects */
+.language-fade-enter {
+  opacity: 0;
+}
+.language-fade-enter-active {
+  opacity: 1;
+  transition: opacity 400ms;
+}
+.language-fade-exit {
+  opacity: 1;
+}
+.language-fade-exit-active {
+  opacity: 0;
+  transition: opacity 400ms;
+}
+
+/* Custom Button Styles */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #7CB342 0%, #4B830D 100%);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, #67a32c 0%, #3b6c0a 100%);
+  box-shadow: 0 4px 12px rgba(76, 130, 13, 0.3);
+}
+
+.btn-secondary-gradient {
+  background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+  color: #4B4B4B;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary-gradient:hover {
+  background: linear-gradient(135deg, #FFC107 0%, #FFA000 100%);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+/* Card Hover Effects */
+.card-hover-effect {
+  transition: all 0.3s ease;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix the icons in CropProcessing and Transportation */
+.missing-icon-placeholder {
+  @apply h-5 w-5 text-primary;
+}
